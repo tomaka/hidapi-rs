@@ -58,7 +58,7 @@ extern crate libc;
 
 mod ffi;
 
-use std::ffi::CStr;
+use std::ffi::{CStr, CString};
 use std::marker::PhantomData;
 use libc::{wchar_t, size_t, c_int};
 
@@ -162,7 +162,8 @@ impl HidApi {
     /// The path name be determined by calling hid_enumerate(), or a
     /// platform-specific path name can be used (eg: /dev/hidraw0 on Linux).
     pub fn open_path(&self, device_path: &str) -> HidResult<HidDevice> {
-        let device = unsafe { ffi::hid_open_path(std::mem::transmute(device_path.as_ptr())) };
+		let cstr = CString::new(device_path).unwrap();
+        let device = unsafe { ffi::hid_open_path(cstr.as_ptr()) };
 
         if device.is_null() {
             Err("Unable to open hid device")
