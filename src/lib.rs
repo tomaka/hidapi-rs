@@ -107,17 +107,18 @@ impl HidApi {
         let enumeration = ffi::hid_enumerate(0, 0);
         {
             let mut current_device = enumeration;
+			if !current_device.is_null() {
+				'do_while: loop {
 
-            'do_while: loop {
+					device_vector.push(conv_hid_device_info(current_device));
 
-                device_vector.push(conv_hid_device_info(current_device));
-
-                if (*current_device).next.is_null() {
-                    break 'do_while;
-                } else {
-                    current_device = (*current_device).next;
-                }
-            }
+					if (*current_device).next.is_null() {
+						break 'do_while;
+					} else {
+						current_device = (*current_device).next;
+					}
+				}
+			}
         }
 
         ffi::hid_free_enumeration(enumeration);
@@ -421,4 +422,13 @@ impl<'a> HidDevice<'a> {
         let res = try!(self.check_size(res));
         unsafe { wchar_to_string(buf[..res].as_ptr()) }
     }
+}
+
+#[test]
+fn smoke() {
+let api = HidApi::new().unwrap();
+		// Print out information about all connected devices
+		for device in &api.devices() {
+		println!("{:#?}", device);
+	}
 }
