@@ -17,7 +17,7 @@
 // along with hidapi_rust.  If not, see <http://www.gnu.org/licenses/>.
 // *************************************************************************
 
-extern crate gcc;
+extern crate cc;
 
 fn main() {
     compile();
@@ -25,7 +25,7 @@ fn main() {
 
 #[cfg(target_os = "linux")]
 fn compile() {
-    let mut config = gcc::Config::new();
+    let mut config = cc::Build::new();
     config.file("etc/hidapi/linux/hid.c").include("etc/hidapi/hidapi");
     config.compile("libhidapi.a");
     println!("cargo:rustc-link-lib=udev");
@@ -33,7 +33,7 @@ fn compile() {
 
 #[cfg(target_os = "windows")]
 fn compile() {
-    gcc::Config::new()
+    cc::Build::new()
         .file("etc/hidapi/windows/hid.c")
         .include("etc/hidapi/hidapi")
         .compile("libhidapi.a");
@@ -42,7 +42,7 @@ fn compile() {
 
 #[cfg(target_os = "macos")]
 fn compile() {
-    gcc::Config::new()
+    cc::Build::new()
         .file("etc/hidapi/mac/hid.c")
         .include("etc/hidapi/hidapi")
         .compile("libhidapi.a");
