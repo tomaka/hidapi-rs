@@ -19,33 +19,30 @@
 
 extern crate cc;
 
+use std::env;
+
 fn main() {
-    compile();
-}
+    let target = env::var("TARGET").unwrap();
 
-#[cfg(target_os = "linux")]
-fn compile() {
-    let mut config = cc::Build::new();
-    config.file("etc/hidapi/linux/hid.c").include("etc/hidapi/hidapi");
-    config.compile("libhidapi.a");
-    println!("cargo:rustc-link-lib=udev");
-}
+    if target.contains("windows") {
+        cc::Build::new()
+            .file("etc/hidapi/windows/hid.c")
+            .include("etc/hidapi/hidapi")
+            .compile("libhidapi.a");
+        println!("cargo:rustc-link-lib=setupapi");
 
-#[cfg(target_os = "windows")]
-fn compile() {
-    cc::Build::new()
-        .file("etc/hidapi/windows/hid.c")
-        .include("etc/hidapi/hidapi")
-        .compile("libhidapi.a");
-    println!("cargo:rustc-link-lib=setupapi");
-}
+    } else if target.contains("macos") {
+        cc::Build::new()
+            .file("etc/hidapi/mac/hid.c")
+            .include("etc/hidapi/hidapi")
+            .compile("libhidapi.a");
+        println!("cargo:rustc-link-lib=framework=IOKit");
+        println!("cargo:rustc-link-lib=framework=CoreFoundation");
 
-#[cfg(target_os = "macos")]
-fn compile() {
-    cc::Build::new()
-        .file("etc/hidapi/mac/hid.c")
-        .include("etc/hidapi/hidapi")
-        .compile("libhidapi.a");
-    println!("cargo:rustc-link-lib=framework=IOKit");
-    println!("cargo:rustc-link-lib=framework=CoreFoundation");
+    } else if target.contains("linux") {
+        let mut config = cc::Build::new();
+        config.file("etc/hidapi/linux/hid.c").include("etc/hidapi/hidapi");
+        config.compile("libhidapi.a");
+        println!("cargo:rustc-link-lib=udev");
+    }
 }
