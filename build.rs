@@ -39,6 +39,8 @@ fn main() {
         println!("cargo:rustc-link-lib=framework=IOKit");
         println!("cargo:rustc-link-lib=framework=CoreFoundation");
 
+    } else if target.contains("android") {
+
     } else if target.contains("linux") {
         let mut config = cc::Build::new();
         config.file("etc/hidapi/linux/hid.c").include("etc/hidapi/hidapi");

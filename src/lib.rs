@@ -56,6 +56,7 @@
 //! ```
 extern crate libc;
 
+#[cfg(not(target_os = "android"))]
 mod ffi;
 
 use std::ffi::{CStr, CString};
@@ -68,12 +69,17 @@ const STRING_BUF_LEN: usize = 128;
 
 /// Object for handling hidapi context and implementing RAII for it.
 /// Only one instance can exist at a time.
+#[cfg(not(target_os = "android"))]
 pub struct HidApi {
     devices: Vec<HidDeviceInfo>,
+}
+#[cfg(target_os = "android")]
+pub struct HidApi {
 }
 
 static mut hid_api_lock: bool = false;
 
+#[cfg(not(target_os = "android"))]
 impl HidApi {
     /// Initializes the HID
     pub fn new() -> HidResult<Self> {
@@ -176,6 +182,28 @@ impl HidApi {
     }
 }
 
+#[cfg(target_os = "android")]
+impl HidApi {
+    pub fn new() -> HidResult<Self> {
+        Ok(HidApi {})
+    }
+    pub fn refresh_devices(&mut self) {
+    }
+    pub fn devices(&self) -> Vec<HidDeviceInfo> {
+        Vec::new()
+    }
+    pub fn open(&self, vid: u16, pid: u16) -> HidResult<HidDevice> {
+        Err("Unable to open hid device")
+    }
+    pub fn open_serial(&self, vid: u16, pid: u16, sn: &str) -> HidResult<HidDevice> {
+        Err("Unable to open hid device")
+    }
+    pub fn open_path(&self, device_path: &str) -> HidResult<HidDevice> {
+        Err("Unable to open hid device")
+    }
+}
+
+#[cfg(not(target_os = "android"))]
 impl Drop for HidApi {
     fn drop(&mut self) {
         unsafe {
@@ -186,6 +214,7 @@ impl Drop for HidApi {
 }
 
 /// Converts a pointer to a `wchar_t` to a string
+#[cfg(not(target_os = "android"))]
 unsafe fn wchar_to_string(wstr: *const wchar_t) -> HidResult<String> {
     if wstr.is_null() {
         return Err("Null pointer!");
@@ -208,6 +237,7 @@ unsafe fn wchar_to_string(wstr: *const wchar_t) -> HidResult<String> {
 }
 
 /// Convert the CFFI `HidDeviceInfo` struct to a native `HidDeviceInfo` struct
+#[cfg(not(target_os = "android"))]
 unsafe fn conv_hid_device_info(src: *mut ffi::HidDeviceInfo) -> HidDeviceInfo {
     HidDeviceInfo {
         path: std::str::from_utf8(CStr::from_ptr((*src).path).to_bytes()).unwrap().to_owned(),
@@ -239,18 +269,25 @@ pub struct HidDeviceInfo {
 }
 
 /// Object for accessing HID device
+#[cfg(not(target_os = "android"))]
 pub struct HidDevice<'a> {
     _hid_device: *mut ffi::HidDevice,
     /// Prevents this from outliving the api instance that created it
     phantom: PhantomData<&'a ()>,
 }
+#[cfg(target_os = "android")]
+pub struct HidDevice<'a> {
+    phantom: PhantomData<&'a ()>,
+}
 
+#[cfg(not(target_os = "android"))]
 impl<'a> Drop for HidDevice<'a> {
     fn drop(&mut self) {
         unsafe { ffi::hid_close(self._hid_device) };
     }
 }
 
+#[cfg(not(target_os = "android"))]
 impl<'a> HidDevice<'a> {
     /// Check size returned by other methods, if it's equal to -1 check for
     /// error and return Error, otherwise return size as unsigned number
@@ -422,6 +459,43 @@ impl<'a> HidDevice<'a> {
         };
         let res = try!(self.check_size(res));
         unsafe { wchar_to_string(buf[..res].as_ptr()) }
+    }
+}
+
+#[cfg(target_os = "android")]
+impl<'a> HidDevice<'a> {
+    pub fn check_error(&self) -> HidResult<String> {
+        unreachable!()
+    }
+    pub fn write(&self, data: &[u8]) -> HidResult<usize> {
+        unreachable!()
+    }
+    pub fn read(&self, buf: &mut [u8]) -> HidResult<usize> {
+        unreachable!()
+    }
+    pub fn read_timeout(&self, buf: &mut [u8], timeout: i32) -> HidResult<usize> {
+        unreachable!()
+    }
+    pub fn send_feature_report(&self, data: &[u8]) -> HidResult<()> {
+        unreachable!()
+    }
+    pub fn get_feature_report(&self, buf: &mut [u8]) -> HidResult<usize> {
+        unreachable!()
+    }
+    pub fn set_blocking_mode(&self, blocking: bool) -> HidResult<()> {
+        unreachable!()
+    }
+    pub fn get_manufacturer_string(&self) -> HidResult<String> {
+        unreachable!()
+    }
+    pub fn get_product_string(&self) -> HidResult<String> {
+        unreachable!()
+    }
+    pub fn get_serial_number_string(&self) -> HidResult<String> {
+        unreachable!()
+    }
+    pub fn get_indexed_string(&self, index: i32) -> HidResult<String> {
+        unreachable!()
     }
 }
 
